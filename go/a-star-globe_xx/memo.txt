@@ -1,0 +1,120 @@
+1: ok
+n =  5 path =  [f15 f14 r0 f13 -r0 f14 -r1 f15 r1 f15] 60
+n =  0 path =  [-r1_2 f0 -r0 f0 r0 f0 -r0 f0 -r1 f0 r0 r1 f0 r1_2] 14
+*[f14 -r0 f14 r0 f14 -r0 f14 -r1 f14 r0 r1 f14]
+  f31 -r1 -r0 f31 -r1 f31 r1 f31 r0 f31 r1 f31
+STATE =  N0;N1;N2;N3;N4;N5;N6;N7;N8;N9;N10;N11;N12;N13;N14;N15;N16;N17;N18;N19;N20;N21;N22;N23;N24;N25;N26;N27;N28;N29;.;.
+INIT  =  N0;N1;N2;N3;N4;N5;N6;N7;N8;N9;N10;N11;N12;N13;N14;N15;N16;N17;N18;N19;N20;N21;N22;N23;N24;N25;N26;N27;N28;.;N29;.
+
+STATE =  N0;N1;N2;N3;N4;N5;N6;N7;N8;N9;N10;N11;N12;N13;N14;N15;N16;N17;N18;N19;N20;N21;N22;N23;N24;X;.;.;.;.;.;.
+INIT  =  N0;N1;N2;N3;N4;N5;N6;N7;N8;N9;N10;N11;N12;N13;N14;N15;N16;N17;N18;N19;N20;N21;N22;N23;N24;.;.;.;.;.;.;.
+
+2:
+n =  0 path =  [f7 r0 f7 -r0 f15 r0 f6 -r0 f6 f15] 10
+n =  0 path =  [r1_6 f8 -r1 -r0 f8 r1 f0 -r1 f0 -r0 f8 r0 f8 -r1_6] 14
+*[f15 -r1 f15 -r0 f15 -r1 f15 r1 f15 r0 r1 f15] 12
+STATE =  N0;N1;N2;N3;N4;N5;N6;N7;N8;N9;N10;N11;N12;N13;N14;N15;N16;N17;N18;N19;N20;N21;N22;N23;N24;N25;N26;N27;N28;N29;.;.
+INIT  =  N0;N1;N2;N3;N4;N5;N6;N7;N8;N9;N10;N11;N12;N13;N14;N15;N16;N17;N18;N19;N20;N21;N22;N23;N24;N25;N26;N27;N28;.;.;N29
+
+f14 -r1 f14 -r0 f14 -r1 f14 r1 f14 r0 r1 f14
+
+3:
+n =  0 path =  [f6 f15 r1 f15 -r1 f8 r1 f8 r0 f6] 10
+n =  0 path =  [r1_5 f8 -r0_2 -r1 f8 r1 f8 r0 f8 -r0 f0 -r1_2 f0 -r1_5] 14
+*[f14 -r1 -r0 -r1 f14 r1 f14 r0 f14 -r0 f14 r0 r1 f14]
+STATE =  N0;N1;N2;N3;N4;N5;N6;N7;N8;N9;N10;N11;N12;N13;N14;N15;N16;N17;N18;N19;N20;N21;N22;N23;N24;N25;N26;N27;N28;.;.;.
+INIT  =  N0;N1;N2;N3;N4;N5;N6;N7;N8;N9;N10;N11;N12;N13;N14;N15;N16;N17;N18;N19;N20;N21;N22;N23;N24;N25;N26;N27;.;.;.;N28
+
+f14 -r3 -r0 -r3 f14 r3 f14 r0 f14 -r0 f14 r0 r3 f14
+
+4:
+n =  0 path =  [f13 f3 -r0 f3 -r1 f4 r1 f4 r0 f13] 10
+n =  0 path =  [r1_4 f0 r1_3 r0 f8 -r0 f0 r0 f8 -r0 f0 -r1_3 f0 -r1_4] 14
+* [-r1 r0 -r1 f0 -r1 -r0 -r1 f0 -r0 f0 -r1 f0 r1 f0 r0 r1 r0 r1 f0 r1 -r0 r1]
+* [f13 -r0 -r1 -r0 -r1 f13 r1 f13 r0 f13 -r0 f13 r0 r1 r0 f13]
+STATE =  N0;N1;N2;N3;N4;N5;N6;N7;N8;N9;N10;N11;N12;N13;N14;N15;N16;N17;N18;N19;N20;N21;N22;N23;N24;N25;N26;N27;.;.;.;.
+INIT  =  N0;N1;N2;N3;N4;N5;N6;N7;N8;N9;N10;N11;N12;N13;N14;N15;N16;N17;N18;N19;N20;N21;N22;N23;N24;N25;N26;.;.;.;.;N27
+
+5:
+n =  0 path =  [f13 -r1 f11 r1 f11 r0 f3 r1 f3 f13] 10
+n =  0 path =  [r1_7 f0 r0_4 f0 -r0 f8 -r1 f8 r1 f8 r0 r1_4 f8 -r1_7] 14
+* [-r1 f0 -r1 f0 -r1 f0 -r1 -r0 -r1 f0 -r0 f0 -r1 f0 r1 f0 r0 r1 r0 r1 f0 r1 f0 r1 f0 r1]
+* [f13 -r0 -r1 -r0 -r1 f13 -r0 f13 -r1 f13 r1 f13 r0 r1 r0 r1 r0 f13]
+STATE =  N0;N1;N2;N3;N4;N5;N6;N7;N8;N9;N10;N11;N12;N13;N14;N15;N16;N17;N18;N19;N20;N21;N22;N23;N24;N25;N26;.;.;.;.;.
+INIT  =  N0;N1;N2;N3;N4;N5;N6;N7;N8;N9;N10;N11;N12;N13;N14;N15;N16;N17;N18;N19;N20;N21;N22;N23;N24;N25;.;.;.;.;.;N26
+
+6:
+n =  0 path =  [f13 -r1 f11 r1 f10 -r1 f2 -r0 f2 f13] 10
+n =  0 path =  [r1_2 f8 -r1 -r0_5 f8 r1 f8 r0 f8 -r0 f8 r0_5 f8 -r1_2] 14
+* [-r1 r0 -r1 f0 -r1 -r0 -r1 r0 -r1 -r0 -r1 f0 -r0 f0 -r1 f0 r1 f0 r0 r1 r0 r1 -r0 r1 r0 r1 f0 r1 -r0 r1]
+* [f12 -r1 -r0 -r1 -r0 -r1 -r0 f12 r1 f12 r0 f12 -r0 f12 r1 r0 -r1 r0 r1 r0 r1 f12]
+STATE =  N0;N1;N2;N3;N4;N5;N6;N7;N8;N9;N10;N11;N12;N13;N14;N15;N16;N17;N18;N19;N20;N21;N22;N23;N24;N25;.;.;.;.;.;.
+INIT  =  N0;N1;N2;N3;N4;N5;N6;N7;N8;N9;N10;N11;N12;N13;N14;N15;N16;N17;N18;N19;N20;N21;N22;N23;N24;.;.;.;.;.;.;N25
+
+7:
+n =  0 path =  [f12 -r1 f9 r1 f9 r0 f1 r1 f1 f12] 10
+n =  0 path =  [r1 f8 -r1 -r0_6 f8 r1 f8 r0 f8 -r0 f0 -r1_6 f0 -r1] 14
+* [f12 -r1 -r0 -r1 -r0 -r1 -r0 -r1 f12 r1 f12 r0 f12 -r0 f12 r0 r1 r0 r1 r0 r1 f12]
+STATE =  N0;N1;N2;N3;N4;N5;N6;N7;N8;N9;N10;N11;N12;N13;N14;N15;N16;N17;N18;N19;N20;N21;N22;N23;N24;.;.;.;.;.;.;.
+INIT  =  N0;N1;N2;N3;N4;N5;N6;N7;N8;N9;N10;N11;N12;N13;N14;N15;N16;N17;N18;N19;N20;N21;N22;N23;.;.;.;.;.;.;.;N24
+
+8: ok 
+n =  0 path =  [f12 -r1 f9 r1 f8 -r1 f8 r1 f8 f12] 10 F6->f8
+n =  0 path =  [f8 -r0_7 -r1 f0 -r0 f0 r0 f8 -r0 f8 r0_7 f8] 12  
+* [f11 -r0 -r1 -r0 -r1 -r0 -r1 -r0 -r1 f11 r1 f11 r0 f11 -r0 f11 r0 r1 r0 r1 r0 r1 r0 f11]
+STATE =  N0;N1;N2;N3;N4;N5;N6;N7;N8;N9;N10;N11;N12;N13;N14;N15;N16;N17;N18;N19;N20;N21;N22;N23;.;.;.;.;.;.;.;.
+INIT  =  N0;N1;N2;N3;N4;N5;N6;N7;N8;N9;N10;N11;N12;N13;N14;N15;N16;N17;N18;N19;N20;N21;N22;.;.;.;.;.;.;.;.;N23
+
+9: ok
+n =  0 path =  [f11 -r1 f7 -r0 f8 r0 f8 r1 f7 f11] 10
+n =  0 path =  [f0 -r0_7 -r1 f8 -r0 f8 r0 f8 r1 f8 r0_7 f0] 12
+f23 -r0_8 -r1 f23 r1 f23 r0 f23 -r0 f23 r0_8 f23
+STATE =  N0;N1;N2;N3;N4;N5;N6;N7;N8;N9;N10;N11;N12;N13;N14;N15;N16;N17;N18;N19;N20;N21;N22;.;.;.;.;.;.;.;.;.
+INIT  =  N0;N1;N2;N3;N4;N5;N6;N7;N8;N9;N10;N11;N12;N13;N14;N15;N16;N17;N18;N19;N20;N21;.;.;.;.;.;.;.;.;.;N22
+
+10: x
+n =  0 path =  [f10 f5 r1 f5 -r1 f14 r1 f14 r0 f10] 10
+n =  0 path =  [f0 -r1 -r0_6 f8 -r0 f0 -r1 f0 r1 f8 r0_6 f0] 12
+* [f10 r1 r0 r1 r0 r1 r0 f10 -r0 f10 r0 f10 r1 f10 -r1 -r0 -r1 -r0 -r1 -r0 -r1 f10]
+[f26 -r0 -r1 -r0 -r1 -r0 -r1 -r0 -r1 -r0 -r1 f26 r1 -f26 r0 -f26 -r0 -f26 r0 r1 r0 r1 r0 r1 r0 r1 r0 -f26] 
+STATE =  N0;N1;N2;N3;N4;N5;N6;N7;N8;N9;N10;N11;N12;N13;N14;N15;N16;N17;N18;N19;N20;N21;.;.;.;.;.;.;.;.;.;.
+INIT  =  N0;N1;N2;N3;N4;N5;N6;N7;N8;N9;N10;N11;N12;N13;N14;N15;N16;N17;N18;N19;N20;.;.;.;.;.;.;.;.;.;.;N21
+
+11:
+n =  0 path =  [f2 -r1 f0 -r0 f0 r0 f15 r1 f15 f2] 10
+n =  0 path =  [f8 r0 r1_5 f0 -r0 f0 -r1 f0 r1 f8 r0_5 f0] 12
+* [f10 r1 r0 r1 r0 r1 r0 f10 r1 f10 -r1 f10 -r0 f10 -r1 -r0 -r1 -r0 -r1 f10]
+-r0 f26 -r0 -r1 -r0 -r1 -r0 -r1 -r0 -r1 -r0 -r1 f26 -r0 f26 -r1 -f26 r1 -f26 r0 r1 r0 r1 r0 r1 r0 r1 r0 r1 r0 -f26 r0
+STATE =  N0;N1;N2;N3;N4;N5;N6;N7;N8;N9;N10;N11;N12;N13;N14;N15;N16;N17;N18;N19;N20;.;.;.;.;.;.;.;.;.;.;.
+INIT  =  N0;N1;N2;N3;N4;N5;N6;N7;N8;N9;N10;N11;N12;N13;N14;N15;N16;N17;N18;N19;.;.;.;.;.;.;.;.;.;.;.;N20
+
+12:
+n =  0 path =  [f10 -r1 f13 r1 f13 r0 f4 r1 f4 f10] 10
+n =  0 path =  [f0 -r1 -r0_4 f8 -r0 f0 -r1 f8 -r0 f0 r0_4 f0] 12
+* [f10 r1 r0 r1 r0 -r1 r0 r1 f10 r1 f10 -r1 f10 -r0 f10 -r0 -r1 -r0 -r1 f10]
+STATE =  N0;N1;N2;N3;N4;N5;N6;N7;N8;N9;N10;N11;N12;N13;N14;N15;N16;N17;N18;N19;.;.;.;.;.;.;.;.;.;.;.;.
+INIT  =  N0;N1;N2;N3;N4;N5;N6;N7;N8;N9;N10;N11;N12;N13;N14;N15;N16;N17;N18;.;.;.;.;.;.;.;.;.;.;.;.;N19
+
+13:
+n =  0 path =  [f9 r0 f10 r1 f9 -r1 f10 -r0 f11 f9] 10
+n =  0 path =  [f8 r0 r1_3 f0 -r0 f0 -r1 f0 r1 f8 r0_3 f0] 12
+* [-r1 f10 r1 r0 f10 -r1 f10 -r0 f10 r0 f10 -r0 f10]
+STATE =  N0;N1;N2;N3;N4;N5;N6;N7;N8;N9;N10;N11;N12;N13;N14;N15;N16;N17;N18;.;.;.;.;.;.;.;.;.;.;.;.;.
+INIT  =  N0;N1;N2;N3;N4;N5;N6;N7;N8;N9;N10;N11;N12;N13;N14;N15;N16;N17;.;.;.;.;.;.;.;.;.;.;.;.;.;N18
+
+14:
+n =  0 path =  [f8 f9 r1 f8 -r1 f9 -r0 f10 r0 f8] 10 f1
+n =  0 path =  [f0 -r0_2 -r1 f8 -r0 f0 -r1 f8 -r0 f8 -r1_2 f8] 12
+*[f9 -r0 f9 -r1 f9 r0 r1 f9 -r1 f9 -r0 f9 r0]
+STATE =  N0;N1;N2;N3;N4;N5;N6;N7;N8;N9;N10;N11;N12;N13;N14;N15;N16;N17;.;.;.;.;.;.;.;.;.;.;.;.;.;.
+INIT  =  N0;N1;N2;N3;N4;N5;N6;N7;N8;N9;N10;N11;N12;N13;N14;N15;N16;.;.;.;.;.;.;.;.;.;.;.;.;.;.;N17
+
+
+1: [14, "-f14 -r0 -f14 r0 -f14 -r0 -f14 -r1 -f14 r1 r0 -f14"],
+2: [15, "r1 f13 -r1 -r0 f13 r1 f13 r0 f13 -r0 f13 r0 f13 -r1"],
+3: [15, "r1 f13 -r1 -r0 f13 -r0 f13 -r1 f13 r1 f13 r0 r1 r0 f13 -r1"],
+4: [15, "f13 -r0 -r1 -r1 -r0 f13 r1 f13 r0 f13 -r0 f13 r0 r1 r0 f13"],
+5: [15, "f13 -r0 -r1 -r1 -r0 f13 -r0 f13 -r1 f13 r1 f13 r0 r1 r0 r1 r0 f13"],
+6: [15, "f13 -r0 -r1 -r0 -r1 -r1 f13 -r0 f13 -r1 f13 r1 f13 r1 r0 r1 r0 r1 r0 f13"],
+7: [15, "-r1 f13 -r1 -r0 -r1 -r0 -r1 -r0 -r1 f13 r1 f13 r0 f13 -r0 f13 r1 r0 r1 r0 r1 r0 f13 r1"],
+8: [15, "-r0 -r1 -r0 -r1 f13 -r0 -r1 -r0 -r1 -r0 -r1 -r0 -r1 f13 r1 f13 r0 f13 -r0 f13 r0 r1 r0 r1 r0 r1 r0 f13 r1 r0 r1 r0"],

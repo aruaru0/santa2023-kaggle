@@ -1,0 +1,1043 @@
+package main
+
+import (
+	"bufio"
+	"crypto/sha1"
+	"encoding/csv"
+	"flag"
+	"fmt"
+	"log"
+	"math/rand"
+	"os"
+	"sort"
+	"strconv"
+	"strings"
+	"time"
+)
+
+// Data ... puzzle data
+type Data struct {
+	ptype             string
+	solution, initial string
+	numWild           int
+}
+
+// // Info ... Info
+// type Info struct {
+// 	name string
+// 	move []int16
+// }
+
+func readCSV(fname string, pid int) Data {
+	file, err := os.Open(fname)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	r := csv.NewReader(file)
+	rows, err := r.ReadAll()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	s := rows[pid+1]
+
+	n, _ := strconv.Atoi(s[4])
+
+	return Data{s[1], s[2], s[3], n}
+}
+
+func readInfo(ptype string) map[string][]int16 {
+	ptype = strings.ReplaceAll(ptype, "/", "_")
+
+	fname := fmt.Sprintf("info/%s.txt", ptype)
+	// fmt.Println(fname)
+
+	file, err := os.Open(fname)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+
+	ret := make(map[string][]int16, 0)
+
+	scanner.Scan()
+	n, err := strconv.Atoi(scanner.Text())
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("moves:", n)
+
+	for scanner.Scan() {
+		s := scanner.Text()
+		strs := strings.Split(s, " ")
+		name := strs[0]
+		v := make([]int16, 0)
+		for _, e := range strs[1:] {
+			x, _ := strconv.Atoi(e)
+			v = append(v, int16(x))
+		}
+		ret[name] = v
+	}
+
+	return ret
+}
+
+func readPath(dir string, pid int) []string {
+	fname := fmt.Sprintf("%s/%d.txt", dir, pid)
+
+	// file, err := os.Open(fname)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// defer file.Close()
+	// scanner := bufio.NewScanner(file)
+	// scanner.Scan()
+	// s := scanner.Text()
+	bytes, err := os.ReadFile(fname)
+	if err != nil {
+		panic(err)
+	}
+
+	s := string(bytes)
+	strs := strings.Split(s, ".")
+
+	return strs
+}
+
+func writePath(dir string, pid int, path []string) {
+	fname := fmt.Sprintf("%s/%d.txt", dir, pid)
+
+	file, err := os.Create(fname)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	s := strings.Join(path, ".")
+	file.Write([]byte(s))
+}
+
+// --------------------------------------------------
+func initReverseMoves(moves map[string][]int16, ptype string) map[string][]int16 {
+	// flg := strings.Contains(ptype, "globe_")
+	// if flg {
+	// 	fmt.Println("type flg = ", flg)
+	// }
+	flg := false
+
+	newMoves := make(map[string][]int16, 0)
+	for m, xform := range moves {
+		newMoves[m] = xform
+		if flg && m[0] != 'r' {
+			continue
+		}
+		mInv := "-" + m
+		xformInv := make([]int16, len(xform))
+		for i := 0; i < len(xform); i++ {
+			xformInv[xform[i]] = int16(i)
+		}
+		newMoves[mInv] = xformInv
+	}
+	return newMoves
+}
+
+func applyMove(move string, state string, moves map[string][]int16) string {
+	m := move
+	s := strings.Split(state, ";")
+
+	moveList := moves[m]
+	newState := []string{}
+	for _, e := range moveList {
+		newState = append(newState, s[e])
+	}
+	return strings.Join(newState, ";")
+}
+
+func applyMoveByte(move string, state []byte, moves map[string][]int16) []byte {
+	m := move
+	s := state
+
+	moveList := moves[m]
+	newState := []byte{}
+
+	for _, e := range moveList {
+		newState = append(newState, s[e])
+	}
+	return newState
+}
+
+func validCheckWithX(state, target string) bool {
+	ok := true
+	for i := 0; i < len(state); i++ {
+		if state[i] == '.' || target[i] == '.' {
+			continue
+		}
+		if state[i] != target[i] {
+			return false
+		}
+	}
+	return ok
+}
+
+func validCheck(state, target string, numWild int) bool {
+	cnt := 0
+	for i := 0; i < len(state); i++ {
+		if state[i] != target[i] {
+			cnt++
+			if cnt > numWild {
+				return false
+			}
+		}
+	}
+	if cnt <= numWild {
+		return true
+	}
+	return false
+}
+
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+func abs(x int) int {
+	if x < 0 {
+		return -x
+	}
+	return x
+}
+
+// var dmap [][]int16
+var r *rand.Rand
+
+// var maxDepth float64
+
+var ddf Data
+var find []string
+var moves map[string][]int16
+
+var used map[[20]byte]bool
+
+func masked(cur, mask string) string {
+	ret := []byte{}
+	for i := 0; i < len(cur); i++ {
+		if mask[i] == '.' {
+			ret = append(ret, '.')
+		} else {
+			ret = append(ret, cur[i])
+		}
+	}
+	return string(ret)
+}
+
+func maskedCheck(cur, mask, target string, num int) bool {
+	cnt := 0
+	wild := 0
+	for i := 0; i < len(cur); i++ {
+		if mask[i] == '.' {
+			if cur[i] != target[i] {
+				wild++
+			}
+		} else if cur[i] != target[i] {
+			cnt++
+		}
+	}
+
+	if cnt+wild <= num {
+		return true
+	}
+	if cnt == 0 {
+		return true
+	}
+	return false
+}
+
+func hash(state []byte) [20]byte {
+	return sha1.Sum(state)
+}
+
+func rule(next string, paths []string) bool {
+	n := len(paths)
+	if n == 0 {
+		return true
+	}
+
+	sameMax := 0
+	same := 0
+	prevMove := ""
+	cng := 0
+	for _, e := range paths {
+		if e == prevMove {
+			same++
+		} else {
+			same = 0
+			cng++
+		}
+		sameMax = max(sameMax, same)
+		prevMove = e
+	}
+	if prevMove == next {
+		sameMax = max(sameMax, same+1)
+	}
+
+	if sameMax > maxLength/4 {
+		return false
+	}
+	// if cng > 10 { // 8回もlとrを交互に切り替えて動かすパターンはない
+	// 	return false
+	// }
+
+	prev := paths[n-1]
+	if prev[0] == '-' && prev[1:] == next {
+		return false
+	}
+	if next[0] == '-' && next[1:] == prev {
+		return false
+	}
+	// switch {
+	// case prev == "-r" && next == "r":
+	// 	fallthrough
+	// case prev == "r" && next == "-r":
+	// 	fallthrough
+	// case prev == "l" && next == "-l":
+	// 	fallthrough
+	// case prev == "-l" && next == "l":
+	// 	return false
+	// }
+	return true
+}
+
+var ng map[[20]byte]bool
+var limitNgSize int
+var maxLength int
+
+func checkCnt(cur, target []byte) bool {
+	cnt := 0
+	for i := 0; i < len(cur); i++ {
+		if target[i] == 255 {
+			continue
+		}
+		if cur[i] != target[i] {
+			cnt++
+		}
+	}
+
+	if cnt == 0 {
+		return true
+	}
+	return false
+}
+
+var movelist []string
+
+func dfs(cur, target []byte, depth int, paths []string, nextPos int) bool {
+	// fmt.Println("\ndfs------")
+	// fmt.Println(cur, target)
+	if checkCnt(cur, target) {
+		// if checkCnt(cur, prev, ddf.solution) {
+		find = paths
+		return true
+	}
+	// hashed_cur := hash(cur)
+	// if _, flg := cashed[hashed_cur]; flg {
+	if hashed_cur, flg := match(cur); flg {
+		// fmt.Println("find...")
+		find = paths
+		path := cashed[hashed_cur]
+		// fmt.Println(cur)
+		// fmt.Println(target, nextPos)
+		// fmt.Println(path)
+
+		for i := len(path) - 1; i >= 0; i-- {
+			e := path[i]
+			if e[0] == '-' {
+				e = e[1:]
+			} else {
+				e = "-" + e
+			}
+			find = append(find, e)
+		}
+		return true
+	}
+
+	if depth == 0 {
+		if len(ng) < limitNgSize {
+			ng[hash(cur)] = true // チェック済みリスト
+			if len(ng) == limitNgSize {
+				fmt.Println("cache filled")
+				// ng = make(map[[20]byte]bool)
+			}
+		}
+		return false
+	}
+
+	for _, e := range movelist {
+		if rule(e, paths) == false {
+			continue
+		}
+		state := applyMoveByte(e, cur, moves)
+		hashed_state := hash(state)
+		if ng[hashed_state] {
+			continue
+		}
+		if _, ok := used[hashed_state]; ok {
+			continue
+		}
+		used[hashed_state] = true
+		ret := dfs(state, target, depth-1, append(paths, e), nextPos)
+		delete(used, hashed_state)
+		if ret {
+			return true
+		}
+	}
+
+	if len(ng) < limitNgSize {
+		ng[hash(cur)] = true // チェック済みリスト
+		if len(ng) == limitNgSize {
+			fmt.Println("cache filled")
+			// ng = make(map[[20]byte]bool)
+		}
+	}
+
+	return false
+}
+
+// bsfを使ってキャッシュする
+const limit_size = 1000000
+
+func bsf(init, target []byte, depth int, paths []string, nextPos int) {
+	q := [][]byte{target}
+	// hashed_init := hash(init)
+	// fmt.Println("BSF-----")
+	cashed[hash(target)] = []string{}
+	// fmt.Println("target", target, cashed[hash(target)])
+	fmt.Print("BSF:")
+	for d := 0; d < depth; d++ {
+		nq := [][]byte{}
+		for _, cur := range q {
+			path := cashed[hash(cur)]
+			for _, e := range movelist {
+				if rule(e, path) == false {
+					continue
+				}
+				state := applyMoveByte(e, cur, moves)
+				hashed_state := hash(state)
+				if _, ok := cashed[hashed_state]; ok {
+					continue
+				}
+				// 複製しないと壊れるので注意
+				tmp := make([]string, len(path))
+				copy(tmp, path)
+				cashed[hashed_state] = append(tmp, e)
+				nq = append(nq, state)
+				// fmt.Println(state, tmp, e)
+				// if _, flg := cashed[hashed_init]; flg {
+
+				// マッチングのチェック
+				// if _, flg := match(init); flg {
+				// 	return
+				// }
+				if _, flg := cashed[hash(init)]; flg {
+					fmt.Print("bsf(cached)")
+					return
+				}
+				if len(cashed) > limit_size {
+					fmt.Print("bsf(size limit)")
+					return
+				}
+				if len(cashed)%10000 == 0 {
+					fmt.Print(".")
+					if len(cashed)%100000 == 0 {
+						fmt.Print(len(cashed))
+					}
+				}
+			}
+		}
+		q = nq
+	}
+	fmt.Println("")
+}
+
+// とりあえず、新しいものは+100するように改造中
+// マッチングアルゴリズムをよく考えないとどうしょうもないことに気づいた・・・・
+func match(init []byte) ([20]byte, bool) {
+	hashval := hash(init)
+	if _, flg := cashed[hashval]; flg {
+		return hashval, true
+	}
+	return [20]byte{}, false
+}
+
+// func match(init []byte) ([20]byte, bool) {
+// 	// fmt.Println("match ------- ")
+// 	mask := []byte{}
+// 	p := make([]int, 0)
+// 	chr := byte(255)
+// 	for i := 0; i < len(init); i++ {
+// 		if init[i] == 255 || init[i] < 100 {
+// 			mask = append(mask, init[i])
+// 		} else {
+// 			mask = append(mask, 255)
+// 			p = append(p, i)
+// 			chr = init[i]
+// 		}
+// 	}
+
+// 	// fmt.Println(mask)
+// 	// fmt.Println("chr", chr, p)
+
+// 	prev := -1
+// 	find := false
+// 	ret := [20]byte{}
+// 	for _, e := range p {
+// 		if prev != -1 {
+// 			mask[prev] = 255
+// 		}
+// 		mask[e] = chr
+// 		// fmt.Println(e, "->", mask)
+// 		hash_val := hash(mask)
+// 		if _, ok := cashed[hash_val]; ok {
+// 			if find == false {
+// 				ret = hash_val
+// 			}
+// 			find = true
+// 			if len(cashed[ret]) > len(cashed[hash_val]) {
+// 				ret = hash_val
+// 			}
+// 			// return hash_val, true
+// 		}
+// 		prev = e
+// 	}
+
+// 	return ret, find
+// }
+
+// func match(init, target []byte, pos int) ([20]byte, bool) {
+// 	mask := make([]byte, len(target))
+// 	copy(mask, target)
+// 	fmt.Println("match ------- ")
+// 	fmt.Println(mask, target, pos)
+
+// 	chr := mask[pos]
+// 	mask[pos] = 255
+// 	fmt.Println("init", init)
+// 	fmt.Println("mask", mask)
+// 	p := []int{}
+// 	for i := 0; i < len(init); i++ {
+// 		if init[i] == chr {
+// 			p = append(p, i)
+// 		}
+// 	}
+// 	prev := -1
+// 	find := false
+// 	ret := [20]byte{}
+// 	for _, e := range p {
+// 		if prev != -1 {
+// 			mask[prev] = 255
+// 		}
+// 		mask[e] = chr
+// 		hash_val := hash(mask)
+// 		if _, ok := cashed[hash_val]; ok {
+// 			if find == false {
+// 				ret = hash_val
+// 			}
+// 			find = true
+// 			if len(cashed[ret]) > len(cashed[hash_val]) {
+// 				ret = hash_val
+// 			}
+// 			// return hash_val, true
+// 		}
+// 		prev = e
+// 	}
+
+// 	return ret, find
+// }
+
+var cashed map[[20]byte][]string
+
+// パターンを文字列に変換する
+func toByte(str string) []byte {
+	ret := []byte{}
+	s := strings.Split(str, ";")
+
+	// fmt.Println("toByte------")
+	// fmt.Println(str)
+	const offset = 100
+	for _, e := range s {
+		if 'A' <= e[0] && e[0] <= 'Z' {
+			if e[0] == 'N' {
+				v, _ := strconv.Atoi(e[1:])
+				ret = append(ret, byte(v))
+			} else if e[0] == '.' {
+				ret = append(ret, 255)
+			} else {
+				ret = append(ret, byte(e[0])-'A')
+			}
+		} else {
+			if e[0] == 'N' {
+				v, _ := strconv.Atoi(e[1:])
+				ret = append(ret, byte(v)+offset)
+			} else if e[0] == '.' {
+				ret = append(ret, 255)
+			} else {
+				ret = append(ret, byte(e[0])-'a'+offset)
+			}
+
+		}
+	}
+	return ret
+}
+
+func appendPattern(ptype string, moves map[string][]int16) map[string][]int16 {
+	fmt.Println("appendPattern", ptype)
+	// if strings.Contains(ptype, "wreath") == false {
+	// 	return moves
+	// }
+	n := 0
+	target := map[string]bool{"r": true, "l": true}
+	switch ptype {
+	case "wreath_100/100":
+		n = (100 + 1) / 2
+		target = map[string]bool{"r": true, "l": true}
+	case "wreath_33/33":
+		n = (33 + 1) / 2
+		target = map[string]bool{"r": true, "l": true}
+	case "globe_3/4":
+		n = 4
+		target = map[string]bool{"r0": true, "r1": true, "r2": true}
+	case "globe_3/33":
+		n = 33
+		target = map[string]bool{"r0": true, "r1": true, "r2": true, "r3": true}
+	default:
+		return moves
+	}
+
+	new := make(map[string][]int16)
+
+	savepat := map[int]bool{
+		1:  true,
+		2:  true,
+		4:  true,
+		8:  true,
+		16: true,
+		32: true,
+	}
+
+	for e := range moves {
+		if target[e] == false {
+			new[e] = moves[e]
+			continue
+		}
+		s := moves[e]
+		state := make([]int16, len(s))
+		for i := 0; i < len(s); i++ {
+			state[i] = int16(i)
+		}
+		// new[e] = s
+		for i := 1; i <= n; i++ {
+			newState := make([]int16, 0)
+			for _, e := range s {
+				newState = append(newState, state[e])
+			}
+			p := e
+			if i != 1 {
+				p = fmt.Sprintf("%s_%d", e, i)
+			}
+			if savepat[i] {
+				new[p] = newState
+			}
+			state = newState
+		}
+	}
+
+	return new
+}
+
+func convertPath(ptype string, path []string) []string {
+	if strings.Contains(ptype, "wreath") == false {
+		return path
+	}
+	tot := 0
+	ret := []string{}
+	for _, e := range path {
+		x := strings.Split(e, "_")
+		if len(x) == 1 {
+			ret = append(ret, e)
+			tot++
+			continue
+		}
+		prefix := x[0]
+		postfix := x[1]
+		// fmt.Println(prefix, postfix)
+		n, _ := strconv.Atoi(postfix)
+		sub := []string{}
+		for i := 0; i < n; i++ {
+			sub = append(sub, prefix)
+		}
+		// fmt.Println(sub)
+		ret = append(ret, sub...)
+		tot += n
+	}
+
+	fmt.Println(tot)
+	return ret
+}
+
+func main() {
+	// pathx := convertPath("wreath", []string{"f0", "r0_1", "-l0_10"})
+	// // writePath("../../tmp", 337, pathx)
+	// fmt.Println(pathx)
+	// return
+
+	r = rand.New(rand.NewSource(time.Now().UnixNano()))
+	pid := flag.Int("problem_id", -1, "")
+	csvFile := flag.String("path_dir", "", "")
+	timeout := flag.String("timeout", "300s", "")
+	maxdepth := flag.Int("depth", 20, "")
+	limit := flag.Int("limit", 1000000, "")
+	reverse := flag.Bool("reverse", false, "")
+
+	flag.Parse()
+
+	limitNgSize = *limit
+	fmt.Println("Limit", limitNgSize)
+
+	if *pid == -1 {
+		fmt.Println("need --problem_id")
+		return
+	}
+
+	PUZZLE_FILE := "../../data/puzzles.csv"
+	SAMPLEDIR := *csvFile
+
+	ddf = readCSV(PUZZLE_FILE, *pid)
+	info := readInfo(ddf.ptype)
+	paths := readPath(SAMPLEDIR, *pid)
+
+	fmt.Println("Path size = ", len(paths), ": ", ddf.ptype, "wild:", ddf.numWild)
+
+	info = appendPattern(ddf.ptype, info)
+
+	moves = initReverseMoves(info, ddf.ptype)
+
+	// {
+	// 	// check moves
+	// 	for m := range moves {
+	// 		fmt.Print(m, " ")
+	// 	}
+	// 	fmt.Println()
+
+	// 	for _, m := range []string{"r", "-r", "l", "-l"} {
+	// 		for i := 2; i <= 50; i++ {
+	// 			move := fmt.Sprintf("%s_%d", m, i)
+	// 			state1 := applyMove(move, ddf.solution, moves)
+	// 			path := convertPath("wreath", []string{move})
+	// 			state0 := ddf.solution
+	// 			for _, e := range path {
+	// 				state0 = applyMove(e, state0, moves)
+	// 			}
+
+	// 			fmt.Println(m, move, path, state0 == state1)
+	// 			fmt.Println("ST0", state0)
+	// 			fmt.Println("ST1", state1)
+	// 			if state0 != state1 {
+	// 				return
+	// 			}
+	// 		}
+	// 	}
+
+	// 	return
+	// }
+
+	for e := range moves {
+		movelist = append(movelist, e)
+	}
+
+	sort.Slice(movelist, func(i, j int) bool {
+		ni, nj := 1, 1
+		if s := strings.Split(movelist[i], "_"); len(s) != 1 {
+			ni, _ = strconv.Atoi(s[1])
+		}
+		if s := strings.Split(movelist[j], "_"); len(s) != 1 {
+			nj, _ = strconv.Atoi(s[1])
+		}
+		if ni == nj {
+			return movelist[i] < movelist[j]
+		}
+		return ni < nj
+	})
+
+	fmt.Println("MoveList", movelist)
+
+	// ret := toByte("A;A;A;A;B;B;B;B;C;C;C;C;D;D;D;D;E;E;E;E;F;F;F;x")
+	// fmt.Println(ret)
+	// ret = toByte("N0;N1;N2;N3;N4;N5;N6;N7;N8;N9;N10;N11;N12;N13;N14;N15;N16;N17;N18;N19;N20;N21;N22;N23")
+	// fmt.Println(ret)
+	// ret = applyMoveByte("r", ret, moves)
+	// fmt.Println(ret)
+	// return
+
+	fmt.Println(ddf, timeout)
+
+	solpat := strings.Split(ddf.solution, ";")
+	solLen := len(solpat)
+	maxLength = solLen
+
+	mask := make([]string, solLen)
+	for i := 0; i < solLen; i++ {
+		mask[i] = "."
+	}
+	newpath := []string{}
+
+	fmt.Println(ddf.solution, len(newpath))
+
+	solState := strings.Split(ddf.solution, ";")
+
+	prev_mask := make([]string, len(mask))
+	copy(prev_mask, mask)
+	// fmt.Println(prev_mask)
+
+	// fmt.Println("start loop")
+	// fstate := ddf.initial
+	// for i := 0; i < 300; i++ {
+	// 	for j := 0; j < 100 && fstate[0] != 'B'; j++ {
+	// 		fstate = applyMove("l", fstate, moves)
+	// 		newpath = append(newpath, "l")
+	// 		fmt.Println(fstate, "l")
+	// 	}
+	// 	for j := 0; j < 100 && fstate[0] == 'B'; j++ {
+	// 		fstate = applyMove("r", fstate, moves)
+	// 		newpath = append(newpath, "r")
+	// 		fmt.Println(fstate, "r")
+	// 	}
+	// }
+	// fmt.Println(len(newpath))
+
+	const offset = 100
+
+	c := make([]int, solLen)
+	for i := 0; i < solLen; i++ {
+		c[i] = (i + 2) / 2 * 2
+	}
+	fmt.Println(c)
+
+	for i := 0; i < solLen; i++ {
+		state := ddf.initial
+		for _, e := range newpath {
+			state = applyMove(e, state, moves)
+		}
+		if validCheck(state, ddf.solution, ddf.numWild) == true {
+			break
+		}
+
+		// nextPos := (i + offset) % solLen
+		// nextChr := solState[nextPos]
+		// nextValue := strings.ToLower(nextChr)
+		// mask[nextPos] = nextValue
+		// maskstr := strings.Join(mask, ";")
+
+		nextPos := solLen - 1 - i
+		nextChr := solState[nextPos]
+		// nextValue := strings.ToLower(nextChr)
+		mask[nextPos] = nextChr
+		maskstr := strings.Join(mask, ";")
+
+		fmt.Println("next target value = ", nextChr)
+
+		var initial string
+		if *reverse {
+			state := maskstr
+			for i := len(paths) - 1; i >= 0; i-- {
+				e := paths[i]
+				if e[0] == '-' {
+					e = e[1:]
+				} else {
+					e = "-" + e
+				}
+				state = applyMove(e, state, moves)
+			}
+			// fmt.Println("STATE ======> ", state)
+			for _, e := range newpath {
+				state = applyMove(e, state, moves)
+			}
+			initial = state
+		} else {
+			// マスクパターンを動かして、スタートを作成する
+			curstate := make([]string, len(mask))
+			copy(curstate, prev_mask)
+			s := strings.Split(state, ";")
+			t := strings.Split(ddf.solution, ";")
+			// fmt.Println("CUR:", s, t)
+			for i := 0; i < len(curstate); i++ {
+				if mask[i] == "." && s[i] == nextChr {
+					curstate[i] = nextChr
+					break
+				} else if s[i] != t[i] {
+					curstate[i] = "."
+				}
+				// fmt.Println(i, s[i], t[i], mask[i], curstate[i])
+			}
+			initial = strings.Join(curstate, ";")
+		}
+		// initial := maskstr
+		// xx := ddf.solution
+		// for i := len(paths) - 1; i >= 0; i-- {
+		// 	e := paths[i]
+		// 	if e[0] == '-' {
+		// 		e = e[1:]
+		// 	} else {
+		// 		e = "-" + e
+		// 	}
+		// 	initial = applyMove(e, initial, moves)
+		// 	xx = applyMove(e, xx, moves)
+		// }
+		// for _, e := range newpath {
+		// 	initial = applyMove(e, initial, moves)
+		// 	xx = applyMove(e, xx, moves)
+		// }
+
+		//--------------------
+		fmt.Println("START :", state)
+		fmt.Println("TARGET:", ddf.solution)
+		fmt.Println("INIT  :", initial)
+		fmt.Println("MASK  :", maskstr)
+
+		// s := []byte{state[0], state[50]}
+		// fmt.Println("C zone = ", string(s))
+
+		//A;B;A;B;B;B;B;A;A;B;B;A;B;B;A;B;C;C;A;A;A;A
+		//A;B;A;B;B;B;B;A;A;C;B;A;B;B;A;B;B;C;A;A;A;A
+
+		initial_byte := toByte(initial)
+		target_byte := toByte(maskstr)
+
+		// fmt.Println(initial_byte)
+		// fmt.Println(target_byte)
+
+		startTime := time.Now()
+		cashed = make(map[[20]byte][]string)
+		cashed[hash(target_byte)] = []string{}
+
+		hashed_state := hash(initial_byte)
+
+		skip_flag := false
+		if strings.Split(state, ";")[nextPos] == strings.Split(ddf.solution, ";")[nextPos] {
+			if *reverse == false {
+				skip_flag = true
+			}
+		}
+
+		if _, flg := match(initial_byte); flg || skip_flag {
+			fmt.Println("Already match.")
+		} else {
+			bsf(initial_byte, target_byte, 20, []string{}, nextPos)
+			fmt.Println("Cash Size = ", len(cashed))
+		}
+
+		// if hashval, ok := match(initial_byte, target_byte, nextPos); ok {
+		// 	fmt.Println(cashed[hashval])
+		// }
+
+		ok := false
+
+		if skip_flag {
+			fmt.Println("Already match-----------------skip")
+			fmt.Println(": time = ", time.Since(startTime))
+			find = []string{}
+			ok = true
+		} else if ret_state, flg := match(initial_byte); flg {
+			// if _, flg := cashed[hashed_state]; flg {
+			path := cashed[ret_state]
+			// state := target_byte
+			// for _, e := range path {
+			// 	state = applyMoveByte(e, state, moves)
+			// }
+			find = []string{}
+			for i := len(path) - 1; i >= 0; i-- {
+				e := path[i]
+				if e[0] == '-' {
+					e = e[1:]
+				} else {
+					e = "-" + e
+				}
+				find = append(find, e)
+			}
+			ok = true
+			fmt.Println("Cashed")
+			fmt.Println(": time = ", time.Since(startTime))
+		} else {
+			for depth := 1; depth < *maxdepth; depth++ {
+				fmt.Print("Depth .... ", depth)
+				used = make(map[[20]byte]bool)
+				ng = make(map[[20]byte]bool)
+
+				used[hashed_state] = true
+				ok = dfs(initial_byte, target_byte, depth, []string{}, nextPos)
+				fmt.Println(": time = ", time.Since(startTime))
+				if ok {
+					break
+				}
+			}
+		}
+
+		if ok {
+			fmt.Println(ok, find, len(find))
+			newpath = append(newpath, find...)
+		} else {
+			fmt.Println("Failed....")
+			return
+		}
+
+		state = ddf.initial
+		for _, e := range newpath {
+			state = applyMove(e, state, moves)
+		}
+		fmt.Println(" ----->", state)
+
+		copy(prev_mask, mask)
+		mask[nextPos] = nextChr
+	}
+
+	fmt.Println(newpath)
+	newpath = convertPath("wreath", newpath)
+
+	fmt.Println("[Check] check new path")
+	state := ddf.initial
+	fmt.Println(state)
+	for _, path := range newpath {
+		state = applyMove(path, state, moves)
+		fmt.Println(state)
+	}
+
+	fmt.Println("[valid check]")
+	if validCheck(state, ddf.solution, ddf.numWild) == false {
+		fmt.Println("Error...", *pid)
+		return
+	}
+
+	score := len(newpath) - len(paths)
+	fmt.Println("-----------------------------------------------------------------------")
+	fmt.Printf("[%d]: Score = %d - %d = %d\n", *pid, len(newpath), len(paths), score)
+	fmt.Println("-----------------------------------------------------------------------")
+
+	// if score < 0 {
+	// 	fmt.Println("Update...")
+	// 	writePath(SAMPLEDIR, *pid, newpath)
+	// }
+
+	writePath("../../tmp", *pid, newpath)
+
+}
